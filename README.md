@@ -8,8 +8,11 @@ So far it can generate triangle, sawtooth and square waves at different frequenc
 ## Controls
 
 W - Change waveform
+
 S - Mute/Unmute
+
 Up Arrow - Up one semitone
+
 Down Arrow - Down one semitone
 
 ## Building
