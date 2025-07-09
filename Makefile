@@ -1,6 +1,6 @@
 RAYLIB_ROOT = ../../tools/raylib/build/raylib
 OBJ = obj
-OBJS = obj/main.o
+OBJS = obj/main.o obj/sound_gen.o obj/ui.o
 
 ifeq ($(OS),Windows_NT)
 	OSLIBS = -lopengl32 -luser32 -lgdi32 -lwinmm
@@ -25,7 +25,7 @@ $(OBJ):
 $(EXE): $(OBJS)
 	$(CC) -o $(EXE) $(OBJS) $(LDFLAGS) 
 
-obj/%.o: src/%.c
+obj/%.o: src/%.c src/%.h
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:

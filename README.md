@@ -3,13 +3,13 @@ Simple sound generator using Raylib and C.
 
 This is a work in progress. 
 
-So far it can generate triangle, sawtooth and square waves at different frequencies. It has a simple fade out envelope.
+So far it can generate sine, triangle, sawtooth, square and noise waves at different frequencies. It has a simple fade out envelope.
 
 ## Controls
 
 W - Change waveform
 
-S - Mute/Unmute
+S - Play Sound
 
 Up Arrow - Up one semitone
 
