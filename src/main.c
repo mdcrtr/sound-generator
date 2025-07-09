@@ -1,40 +1,46 @@
+#include <math.h>
 #include <raylib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define SAMPLE_RATE 44100
 #define SAMPLE_SIZE 16
 
-typedef enum { TRIANGLE, SAWTOOTH, SQUARE } WaveForm;
+typedef enum { SINE, TRIANGLE, SAWTOOTH, SQUARE, NOISE } WaveForm;
 
-const char *waveFormNames[] = {"Triangle", "Sawtooth", "Square"};
+const char *waveFormNames[] = {"Sine", "Triangle", "Sawtooth", "Square",
+                               "Noise"};
 
 const float semitones[] = {261.6f, 277.2f, 293.7f, 311.1f, 329.6f, 349.2f,
                            370.0f, 392.0f, 415.3f, 440.0f, 466.2f, 493.9f};
 
 const float octaves[] = {0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f};
 
-WaveForm waveForm = TRIANGLE;
+WaveForm waveForm = SINE;
 int semitoneIdx = 0;
 int octaveIdx = 3;
-float volume = 15000.0f;
+float volume = 0.8f;
 float waveIdx = 0.0f;
 float envelopeIdx = 0.0f;
 
-static short OscillatorStep(float waveIdx, float amplitude) {
-  float peakToPeak = amplitude * 2.0f;
+static short OscillatorStep(float waveIdx) {
   switch (waveForm) {
+    case SINE:
+      return 32767.0f * sin(2 * PI * waveIdx);
     case TRIANGLE:
       if (waveIdx < 0.5f) {
-        return peakToPeak * waveIdx * 2.0f - amplitude;
+        return 65535.0f * waveIdx * 2.0f - 32767.0f;
       }
-      return amplitude - peakToPeak * (waveIdx - 0.5f) * 2.0f;
+      return 32767.0f - 65535.0f * (waveIdx - 0.5f) * 2.0f;
     case SAWTOOTH:
-      return waveIdx * peakToPeak - amplitude;
+      return waveIdx * 65535.0f - 32767.0f;
     case SQUARE:
-      if (waveIdx < 0.5) {
-        return -amplitude;
+      if (waveIdx < 0.5f) {
+        return -32767.0f;
       }
-      return amplitude;
+      return 32767.0f;
+    case NOISE:
+      return 32767.0f * sin(powf(2 * PI * waveIdx, 3));
     default:
       return 0;
   }
@@ -43,12 +49,13 @@ static short OscillatorStep(float waveIdx, float amplitude) {
 static void GenerateAudioSamples(short *buffer, unsigned int frames) {
   float frequency = semitones[semitoneIdx] * octaves[octaveIdx];
   float waveStep = frequency / SAMPLE_RATE;
-  float amplitude = volume;
   float envelopeStep = 2.0f / SAMPLE_RATE;
 
   for (int i = 0; i < frames; i++) {
-    buffer[i] = OscillatorStep(waveIdx, amplitude);
-    buffer[i] *= 1.0f - envelopeIdx;
+    short sample = OscillatorStep(waveIdx);
+    sample *= volume;
+    sample *= 1.0f - envelopeIdx;
+    buffer[i] = sample;
 
     waveIdx += waveStep;
     if (waveIdx > 1.0f) {
@@ -58,6 +65,10 @@ static void GenerateAudioSamples(short *buffer, unsigned int frames) {
     envelopeIdx += envelopeStep;
     if (envelopeIdx > 1.0f) {
       envelopeIdx = 0;
+    }
+
+    if (waveForm == NOISE && i % 64 == 0) {
+      waveIdx = (float)(rand() % 128) / 128;
     }
   }
 }
@@ -88,7 +99,10 @@ int main(void) {
     }
 
     if (IsKeyPressed(KEY_W)) {
-      waveForm = (waveForm + 1) % 3;
+      waveForm++;
+      if (waveForm > NOISE) {
+        waveForm = SINE;
+      }
     }
 
     if (IsKeyPressed(KEY_UP)) {
