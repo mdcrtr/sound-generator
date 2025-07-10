@@ -25,7 +25,7 @@ $(OBJ):
 $(EXE): $(OBJS)
 	$(CC) -o $(EXE) $(OBJS) $(LDFLAGS) 
 
-obj/%.o: src/%.c src/%.h
+obj/%.o: src/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
