@@ -20,6 +20,8 @@ int main(void) {
 
   Sound sound = {0};
 
+  ui_init();
+
   while (!WindowShouldClose()) {
     ui_update();
 
@@ -65,6 +67,7 @@ int main(void) {
     EndDrawing();
   }
 
+  ui_free();
   UnloadSound(sound);
   CloseAudioDevice();
   CloseWindow();

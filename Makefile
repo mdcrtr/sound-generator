@@ -1,6 +1,6 @@
 RAYLIB_ROOT = ../../tools/raylib/build/raylib
 OBJ = obj
-OBJS = obj/main.o obj/sound_gen.o obj/ui.o
+OBJS = obj/main.o obj/sound_gen.o obj/microui.o obj/ui.o
 
 ifeq ($(OS),Windows_NT)
 	OSLIBS = -lopengl32 -luser32 -lgdi32 -lwinmm
@@ -19,14 +19,23 @@ LDFLAGS = -L$(RAYLIB_ROOT) -lraylib $(OSLIBS)
 
 all: $(OBJ) $(EXE)
 
+clean:
+	rm -f $(OBJ)/*
+
 $(OBJ):
 	mkdir -p $(OBJ)
 
 $(EXE): $(OBJS)
 	$(CC) -o $(EXE) $(OBJS) $(LDFLAGS) 
 
-obj/%.o: src/%.c
+obj/main.o: src/main.c
 	$(CC) $(CFLAGS) $< -o $@
 
-clean:
-	rm -f $(OBJ)/*
+obj/sound_gen.o: src/sound_gen.c
+	$(CC) $(CFLAGS) $< -o $@
+
+obj/ui.o: src/ui.c
+	$(CC) $(CFLAGS) $< -o $@
+
+obj/microui.o: src/microui/microui.c
+	$(CC) $(CFLAGS) $< -o $@
