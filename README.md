@@ -1,19 +1,11 @@
 # sound-generator
-Simple sound generator using Raylib and C.
+Simple sound generator implemented in C using Raylib and microui.
 
 This is a work in progress. 
 
-So far it can generate sine, triangle, sawtooth, square and noise waves at different frequencies. It has a simple fade out envelope.
+So far it can generate sine, triangle, sawtooth, square and noise waves at different frequencies. It has a simple fade out envelope (not yet configurable).
 
-## Controls
-
-W - Change waveform
-
-S - Play Sound
-
-Up Arrow - Up one semitone
-
-Down Arrow - Down one semitone
+It has a UI for editing sound parameters. The UI scale can be changed by editing UI_SCALE in ui.h.
 
 ## Building
 
