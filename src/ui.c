@@ -3,13 +3,18 @@
 #include <assert.h>
 #include <raylib.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "microui/atlas.h"
 #include "microui/microui.h"
+#include "sound_gen.h"
 
 typedef struct UiState {
   mu_Context *ctx;
   Texture2D texture;
+  SoundParams sound_params;
+  Sound sound;
+  int semitone;
 } UiState;
 
 static UiState state;
@@ -58,8 +63,8 @@ static void mouse_input(void) {
                                  MU_MOUSE_MIDDLE};
 
   mu_Context *ctx = state.ctx;
-  int x = GetMouseX();
-  int y = GetMouseY();
+  int x = GetMouseX() / UI_SCALE;
+  int y = GetMouseY() / UI_SCALE;
 
   mu_input_mousemove(ctx, x, y);
   mu_input_scroll(ctx, 0, GetMouseWheelMove() * -30);
@@ -107,7 +112,45 @@ static void text_input(void) {
 static void process_frame(void) {
   mu_Context *ctx = state.ctx;
   mu_begin(ctx);
-  if (mu_begin_window(ctx, "Test Window", mu_rect(200, 20, 400, 400))) {
+  if (mu_begin_window_ex(ctx, "Main Window",
+                         mu_rect(10, 10, UI_WIDTH - 20, UI_HEIGHT - 20),
+                         MU_OPT_NOCLOSE | MU_OPT_NOFRAME | MU_OPT_NOTITLE)) {
+    if (mu_button(ctx, "Generate")) {
+      UnloadSound(state.sound);
+      state.sound = build_sound(state.sound_params);
+      play_sound(state.sound);
+    }
+
+    mu_label(ctx, "Waveform");
+    mu_layout_row(ctx, 5, (int[]){80, 80, 80, 80, 80}, 0);
+    for (int i = 0; i <= NOISE; i++) {
+      if (mu_button(ctx, get_waveform_name(i))) {
+        state.sound_params.waveform = i;
+      }
+    }
+
+    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    mu_label(ctx, "Volume");
+    mu_Real vol = (mu_Real)state.sound_params.volume;
+    if (mu_slider(ctx, &vol, 0, 1.0)) {
+      state.sound_params.volume = (float)vol;
+    }
+
+    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    mu_label(ctx, "Semitone");
+    mu_Real freq = (mu_Real)state.semitone;
+    if (mu_slider(ctx, &freq, -35, 35)) {
+      state.semitone = (int)freq;
+      state.sound_params.frequency = get_note_frequency(state.semitone);
+    }
+
+    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    mu_label(ctx, "Duration");
+    mu_Real dur = (mu_Real)state.sound_params.duration;
+    if (mu_slider(ctx, &dur, 0.0, 3.0)) {
+      state.sound_params.duration = (float)dur;
+    }
+
     mu_end_window(ctx);
   }
   mu_end(ctx);
@@ -125,17 +168,27 @@ void ui_init(void) {
                  .mipmaps = 1,
                  .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
-  state.texture = LoadTextureFromImage(image);
+  Texture2D texture = LoadTextureFromImage(image);
   MemFree(pixels);
 
-  state.ctx = (mu_Context *)malloc(sizeof(mu_Context));
+  mu_Context *ctx = (mu_Context *)malloc(sizeof(mu_Context));
 
-  mu_init(state.ctx);
-  state.ctx->text_width = get_text_width;
-  state.ctx->text_height = get_text_height;
+  mu_init(ctx);
+  ctx->text_width = get_text_width;
+  ctx->text_height = get_text_height;
+
+  state = (UiState){.ctx = ctx,
+                    .semitone = 0,
+                    .sound = {0},
+                    .sound_params = (SoundParams){.duration = 0.5f,
+                                                  .frequency = 440.0f,
+                                                  .volume = 0.5f,
+                                                  .waveform = SINE},
+                    .texture = texture};
 }
 
 void ui_free(void) {
+  UnloadSound(state.sound);
   UnloadTexture(state.texture);
   free(state.ctx);
 }
@@ -180,4 +233,8 @@ void ui_draw(void) {
   }
 
   EndScissorMode();
+}
+
+WaveForm ui_get_waveform(void) {
+  return state.sound_params.waveform;
 }

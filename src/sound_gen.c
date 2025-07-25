@@ -3,24 +3,27 @@
 #include <math.h>
 #include <stdlib.h>
 
-static short oscillator_step(WaveForm waveform, float index) {
+static const char *waveform_names[] = {"Sine", "Triangle", "Sawtooth", "Square",
+                                       "Noise"};
+
+static float oscillator_step(WaveForm waveform, float index) {
   switch (waveform) {
     case SINE:
-      return 32767.0f * sin(2 * PI * index);
+      return sin(2.0f * PI * index);
     case TRIANGLE:
       if (index < 0.5f) {
-        return 65535.0f * index * 2.0f - 32767.0f;
+        return 4.0f * index - 1.0f;
       }
-      return 32767.0f - 65535.0f * (index - 0.5f) * 2.0f;
+      return 1.0f - 4.0f * (index - 0.5f);
     case SAWTOOTH:
-      return index * 65535.0f - 32767.0f;
+      return index * 2.0f - 1.0f;
     case SQUARE:
       if (index < 0.5f) {
-        return -32767.0f;
+        return -1.0f;
       }
-      return 32767.0f;
+      return 1.0f;
     case NOISE:
-      return 32767.0f * sin(powf(2 * PI * index, 3));
+      return sin(powf(2.0f * PI * index, 3));
     default:
       return 0;
   }
@@ -28,17 +31,17 @@ static short oscillator_step(WaveForm waveform, float index) {
 
 static void generate_samples(short *buffer, int num_samples,
                              SoundParams params) {
-  float volume = 0.8f;
+  float volume = params.volume;
   float wave_idx = 0.0f;
   float envelope_idx = 0.0f;
   float wave_step = params.frequency / SAMPLE_RATE;
-  float envelope_step = 2.0f / SAMPLE_RATE;
+  float envelope_step = 1.0f / num_samples;
 
   for (int i = 0; i < num_samples; i++) {
-    short sample = oscillator_step(params.waveform, wave_idx);
+    float sample = oscillator_step(params.waveform, wave_idx);
     sample *= volume;
     sample *= 1.0f - envelope_idx;
-    buffer[i] = sample;
+    buffer[i] = (short)(sample * 32767.0f);
 
     wave_idx += wave_step;
     if (wave_idx > 1.0f) {
@@ -47,7 +50,7 @@ static void generate_samples(short *buffer, int num_samples,
 
     envelope_idx += envelope_step;
     if (envelope_idx > 1.0f) {
-      envelope_idx = 0;
+      envelope_idx = 1.0f;
     }
 
     if (params.waveform == NOISE && i % 64 == 0) {
@@ -61,17 +64,25 @@ Sound build_sound(SoundParams params) {
   short *buffer = (short *)MemAlloc(sizeof(short) * num_samples);
   generate_samples(buffer, num_samples, params);
   Wave wave = {
-      .frameCount = 20000,
+      .frameCount = num_samples,
       .sampleRate = SAMPLE_RATE,
       .sampleSize = 16,
       .channels = 1,
       .data = buffer,
   };
   Sound sound = LoadSoundFromWave(wave);
-  UnloadWave(wave);
+  MemFree(buffer);
   return sound;
+}
+
+void play_sound(Sound sound) {
+  PlaySound(sound);
 }
 
 float get_note_frequency(int semitone_offset) {
   return ROOT_NOTE_FREQ * powf(2.0f, semitone_offset / 12.0f);
+}
+
+const char *get_waveform_name(WaveForm waveform) {
+  return waveform_names[waveform];
 }

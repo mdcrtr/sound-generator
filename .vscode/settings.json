@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "stdlib.h": "c",
-    "raylib.h": "c"
+    "raylib.h": "c",
+    "type_traits": "c"
   }
 }

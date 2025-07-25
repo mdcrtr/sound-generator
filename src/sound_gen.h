@@ -11,11 +11,16 @@ typedef enum { SINE, TRIANGLE, SAWTOOTH, SQUARE, NOISE } WaveForm;
 typedef struct {
   float frequency;
   float duration;
+  float volume;
   WaveForm waveform;
 } SoundParams;
 
 Sound build_sound(SoundParams params);
 
+void play_sound(Sound sound);
+
 float get_note_frequency(int offset);
+
+const char *get_waveform_name(WaveForm waveform);
 
 #endif
