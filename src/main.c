@@ -19,12 +19,10 @@ int main(void) {
   camera.zoom = 1;
 
   while (!WindowShouldClose()) {
-    ui_update();
-
     BeginDrawing();
     ClearBackground((Color){50, 50, 50, 255});
     BeginMode2D(camera);
-    ui_draw();
+    ui_process();
     EndMode2D();
     EndDrawing();
   }

@@ -1,5 +1,5 @@
 # sound-generator
-Simple sound generator implemented in C using Raylib and microui.
+Simple sound generator implemented in C using Raylib.
 
 This is a work in progress. 
 
@@ -9,6 +9,15 @@ It has a UI for editing sound parameters. The UI has three bar-chart style contr
 
 ## Building
 
-This project provides a Makefile. It assumes you are running a Unix-like environment with mkdir and gcc. For Windows, you can use MinGW and Git Bash, or manually run the commands from the Makefile.
+This project uses CMake, supporting Linux, MacOS and Windows. The following commands show how to build the project for Linux:
 
-Edit the RAYLIB_ROOT path in the Makefile to point to your Raylib installation. Then use the command ```make``` to build.
+```
+mkdir build
+cd build
+cmake ..
+make
+cd sound-generator
+./sound-generator
+```
+
+Alternatively, use the CMake extension for your IDE to build the project for you.
