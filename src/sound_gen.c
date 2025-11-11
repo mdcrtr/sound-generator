@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define DURATION 0.5f
+
 static const char *waveform_names[] = {"Sine", "Triangle", "Sawtooth", "Square",
                                        "Noise"};
 
@@ -32,19 +34,18 @@ static float oscillator_step(WaveForm waveform, float index) {
 
 static void generate_samples(short *buffer, int num_samples,
                              SoundParams params) {
-  float volume = params.volume;
   float wave_idx = 0.0f;
-  float envelope_idx = 0.0f;
-  float envelope_step = 1.0f / num_samples;
 
   for (int i = 0; i < num_samples; i++) {
     int note_idx = (int)((float)i / (float)num_samples * (float)params.length);
     int tone = params.tones[note_idx];
     float wave_step = get_note_frequency(tone - 24) / SAMPLE_RATE;
+    
+    float waveform = params.waveforms[note_idx];
+    float volume = (float)params.volumes[note_idx] / MAX_VOLUME;
 
-    float sample = oscillator_step(params.waveform, wave_idx);
+    float sample = oscillator_step(waveform, wave_idx);
     sample *= volume;
-    sample *= 1.0f - envelope_idx;
     buffer[i] = (short)(sample * 32767.0f);
 
     wave_idx += wave_step;
@@ -52,19 +53,14 @@ static void generate_samples(short *buffer, int num_samples,
       wave_idx = 0.0f;
     }
 
-    envelope_idx += envelope_step;
-    if (envelope_idx > 1.0f) {
-      envelope_idx = 1.0f;
-    }
-
-    if (params.waveform == NOISE && i % 64 == 0) {
+    if (waveform == NOISE && i % 64 == 0) {
       wave_idx = (float)(rand() % 128) / 128;
     }
   }
 }
 
 Sound build_sound(SoundParams params) {
-  int num_samples = params.duration * SAMPLE_RATE;
+  int num_samples = DURATION * SAMPLE_RATE;
   short *buffer = (short *)MemAlloc(sizeof(short) * num_samples);
   generate_samples(buffer, num_samples, params);
   Wave wave = {

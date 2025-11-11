@@ -7,7 +7,8 @@
 #include "ui.h"
 
 int main(void) {
-  InitWindow(UI_WIDTH * UI_SCALE, UI_HEIGHT * UI_SCALE, "Sound Generator");
+  SetConfigFlags(FLAG_WINDOW_HIGHDPI | FLAG_WINDOW_RESIZABLE);
+  InitWindow(UI_WIDTH, UI_HEIGHT, "Sound Generator");
   SetTargetFPS(60);
 
   InitAudioDevice();
@@ -15,7 +16,7 @@ int main(void) {
   ui_init();
 
   Camera2D camera = {0};
-  camera.zoom = UI_SCALE;
+  camera.zoom = 1;
 
   while (!WindowShouldClose()) {
     ui_update();

@@ -26,7 +26,9 @@ typedef struct UiState {
   SoundParams sound_params;
   Sound sound;
   int semitone;
+  NoteGrid waveform_array;
   NoteGrid note_array;
+  NoteGrid volume_array;
 } UiState;
 
 static UiState state;
@@ -116,8 +118,8 @@ static void mouse_input(void) {
                                  MU_MOUSE_MIDDLE};
 
   mu_Context *ctx = state.ctx;
-  int x = GetMouseX() / UI_SCALE;
-  int y = GetMouseY() / UI_SCALE;
+  int x = GetMouseX();
+  int y = GetMouseY();
 
   mu_input_mousemove(ctx, x, y);
   mu_input_scroll(ctx, 0, GetMouseWheelMove() * -30);
@@ -165,7 +167,9 @@ static void text_input(void) {
 static void generate_pressed(void) {
   state.sound_params.length = state.note_array.length;
   for (int i = 0; i < state.note_array.length; i++) {
+    state.sound_params.waveforms[i] = (WaveForm)state.waveform_array.notes[i];
     state.sound_params.tones[i] = state.note_array.notes[i];
+    state.sound_params.volumes[i] = state.volume_array.notes[i];
   }
 
   UnloadSound(state.sound);
@@ -183,41 +187,43 @@ static void process_frame(void) {
       generate_pressed();
     }
 
-    mu_label(ctx, "Waveform");
-    mu_layout_row(ctx, 5, (int[]){80, 80, 80, 80, 80}, 0);
-    for (int i = 0; i <= NOISE; i++) {
-      if (mu_button(ctx, get_waveform_name(i))) {
-        state.sound_params.waveform = i;
-      }
-    }
+    // mu_label(ctx, "Waveform");
+    // mu_layout_row(ctx, 5, (int[]){80, 80, 80, 80, 80}, 0);
+    // for (int i = 0; i <= NOISE; i++) {
+    //   if (mu_button(ctx, get_waveform_name(i))) {
+    //     state.sound_params.waveform = i;
+    //   }
+    // }
 
-    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
-    mu_label(ctx, "Volume");
-    mu_Real vol = (mu_Real)state.sound_params.volume;
-    if (mu_slider(ctx, &vol, 0, 1.0)) {
-      state.sound_params.volume = (float)vol;
-    }
+    // mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    // mu_label(ctx, "Volume");
+    // mu_Real vol = (mu_Real)state.sound_params.volume;
+    // if (mu_slider(ctx, &vol, 0, 1.0)) {
+    //   state.sound_params.volume = (float)vol;
+    // }
 
-    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
-    mu_label(ctx, "Semitone");
-    mu_Real freq = (mu_Real)state.semitone;
-    if (mu_slider(ctx, &freq, -35, 35)) {
-      state.semitone = (int)freq;
-      state.sound_params.frequency = get_note_frequency(state.semitone);
-    }
+    // mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    // mu_label(ctx, "Semitone");
+    // mu_Real freq = (mu_Real)state.semitone;
+    // if (mu_slider(ctx, &freq, -35, 35)) {
+    //   state.semitone = (int)freq;
+    //   state.sound_params.frequency = get_note_frequency(state.semitone);
+    // }
 
-    mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
-    mu_label(ctx, "Duration");
-    mu_Real dur = (mu_Real)state.sound_params.duration;
-    if (mu_slider(ctx, &dur, 0.0, 3.0)) {
-      state.sound_params.duration = (float)dur;
-    }
+    // mu_layout_row(ctx, 2, (int[]){100, 200}, 0);
+    // mu_label(ctx, "Duration");
+    // mu_Real dur = (mu_Real)state.sound_params.duration;
+    // if (mu_slider(ctx, &dur, 0.0, 3.0)) {
+    //   state.sound_params.duration = (float)dur;
+    // }
 
     mu_end_window(ctx);
   }
   mu_end(ctx);
 
+  note_array_draw(&state.waveform_array);
   note_array_draw(&state.note_array);
+  note_array_draw(&state.volume_array);
 }
 
 void ui_init(void) {
@@ -244,14 +250,12 @@ void ui_init(void) {
   state = (UiState){.ctx = ctx,
                     .semitone = 0,
                     .sound = {0},
-                    .sound_params = (SoundParams){.duration = 0.5f,
-                                                  .frequency = 440.0f,
-                                                  .volume = 0.5f,
-                                                  .waveform = SINE,
-                                                  .length = 0,
+                    .sound_params = (SoundParams){.length = 0,
                                                   .tones = {0}},
                     .texture = texture,
-                    .note_array = note_array_create((Rectangle){20, 300, 300, 300}, 8, 0, 24, 48)};
+                    .waveform_array = note_array_create((Rectangle){20, 50, 300, 80}, MAX_NOTES, 0, 0, 5),
+                    .note_array = note_array_create((Rectangle){20, 140, 300, 350}, MAX_NOTES, 0, 24, 48),
+                    .volume_array = note_array_create((Rectangle){20, 500, 300, 80}, MAX_NOTES, 0, 5, 8)};
 }
 
 void ui_free(void) {
@@ -300,8 +304,4 @@ void ui_draw(void) {
   }
 
   EndScissorMode();
-}
-
-WaveForm ui_get_waveform(void) {
-  return state.sound_params.waveform;
 }
