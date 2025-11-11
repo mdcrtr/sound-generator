@@ -41,7 +41,7 @@ static void generate_samples(short *buffer, int num_samples,
     int tone = params.tones[note_idx];
     float wave_step = get_note_frequency(tone - 24) / SAMPLE_RATE;
     
-    float waveform = params.waveforms[note_idx];
+    WaveForm waveform = params.waveforms[note_idx];
     float volume = (float)params.volumes[note_idx] / MAX_VOLUME;
 
     float sample = oscillator_step(waveform, wave_idx);
