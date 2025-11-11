@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static const char *waveform_names[] = {"Sine", "Triangle", "Sawtooth", "Square",
                                        "Noise"};
@@ -34,10 +35,13 @@ static void generate_samples(short *buffer, int num_samples,
   float volume = params.volume;
   float wave_idx = 0.0f;
   float envelope_idx = 0.0f;
-  float wave_step = params.frequency / SAMPLE_RATE;
   float envelope_step = 1.0f / num_samples;
 
   for (int i = 0; i < num_samples; i++) {
+    int note_idx = (int)((float)i / (float)num_samples * (float)params.length);
+    int tone = params.tones[note_idx];
+    float wave_step = get_note_frequency(tone - 24) / SAMPLE_RATE;
+
     float sample = oscillator_step(params.waveform, wave_idx);
     sample *= volume;
     sample *= 1.0f - envelope_idx;

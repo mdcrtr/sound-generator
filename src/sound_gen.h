@@ -5,6 +5,7 @@
 
 #define ROOT_NOTE_FREQ 440.0f
 #define SAMPLE_RATE 44100
+#define MAX_NOTES 8
 
 typedef enum { SINE, TRIANGLE, SAWTOOTH, SQUARE, NOISE } WaveForm;
 
@@ -13,6 +14,8 @@ typedef struct {
   float duration;
   float volume;
   WaveForm waveform;
+  int length;
+  int tones[MAX_NOTES];
 } SoundParams;
 
 Sound build_sound(SoundParams params);

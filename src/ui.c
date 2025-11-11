@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,15 +10,67 @@
 #include "microui/microui.h"
 #include "sound_gen.h"
 
+#define MAX_NOTES 8
+
+typedef struct NoteGrid {
+  Rectangle bounds;
+  int low_val;
+  int high_val;
+  int length;
+  int notes[MAX_NOTES];
+} NoteGrid;
+
 typedef struct UiState {
   mu_Context *ctx;
   Texture2D texture;
   SoundParams sound_params;
   Sound sound;
   int semitone;
+  NoteGrid note_array;
 } UiState;
 
 static UiState state;
+
+NoteGrid note_array_create(Rectangle bounds, int length, int low_val, int init_val, int high_val) {
+   NoteGrid self = (NoteGrid) {
+    .bounds = bounds,
+    .low_val = low_val,
+    .high_val = high_val,
+    .length = length
+  };
+  for (int i = 0; i < length; i++) {
+    self.notes[i] = init_val;
+  }
+  return self;
+}
+
+void note_array_draw(NoteGrid *self) {
+  float resolution = self->high_val - self->low_val;
+  float x_step = self->bounds.width / self->length;
+  float y_step = self->bounds.height / resolution;
+  float x = self->bounds.x;
+  float y_max = self->bounds.y + self->bounds.height;
+
+	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+		Vector2 mouse_pos = GetMousePosition();
+		if (CheckCollisionPointRec(mouse_pos, self->bounds)) {
+			int i = (int)((mouse_pos.x - self->bounds.x) / x_step);
+			int val = (int)((y_max - mouse_pos.y) / self->bounds.height * resolution);
+			if (i < self->length) {
+				self->notes[i] = val;
+			}
+		}
+	}
+
+  for (int i = 0; i < self->length; i++) {
+    int note = self->notes[i];
+    float h = note * y_step;
+    DrawRectangleRec((Rectangle){x + 1, y_max - h, x_step - 1, h}, GRAY);
+    x += x_step;
+  }
+
+	DrawRectangleLinesEx(self->bounds, 1, RAYWHITE);
+}
 
 static int get_text_width(mu_Font font, const char *text, int len) {
   int res = 0;
@@ -109,6 +162,17 @@ static void text_input(void) {
   mu_input_text(state.ctx, buf);
 }
 
+static void generate_pressed(void) {
+  state.sound_params.length = state.note_array.length;
+  for (int i = 0; i < state.note_array.length; i++) {
+    state.sound_params.tones[i] = state.note_array.notes[i];
+  }
+
+  UnloadSound(state.sound);
+  state.sound = build_sound(state.sound_params);
+  play_sound(state.sound);
+}
+
 static void process_frame(void) {
   mu_Context *ctx = state.ctx;
   mu_begin(ctx);
@@ -116,9 +180,7 @@ static void process_frame(void) {
                          mu_rect(10, 10, UI_WIDTH - 20, UI_HEIGHT - 20),
                          MU_OPT_NOCLOSE | MU_OPT_NOFRAME | MU_OPT_NOTITLE)) {
     if (mu_button(ctx, "Generate")) {
-      UnloadSound(state.sound);
-      state.sound = build_sound(state.sound_params);
-      play_sound(state.sound);
+      generate_pressed();
     }
 
     mu_label(ctx, "Waveform");
@@ -154,6 +216,8 @@ static void process_frame(void) {
     mu_end_window(ctx);
   }
   mu_end(ctx);
+
+  note_array_draw(&state.note_array);
 }
 
 void ui_init(void) {
@@ -183,8 +247,11 @@ void ui_init(void) {
                     .sound_params = (SoundParams){.duration = 0.5f,
                                                   .frequency = 440.0f,
                                                   .volume = 0.5f,
-                                                  .waveform = SINE},
-                    .texture = texture};
+                                                  .waveform = SINE,
+                                                  .length = 0,
+                                                  .tones = {0}},
+                    .texture = texture,
+                    .note_array = note_array_create((Rectangle){20, 300, 300, 300}, 8, 0, 24, 48)};
 }
 
 void ui_free(void) {

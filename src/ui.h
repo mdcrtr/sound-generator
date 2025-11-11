@@ -5,7 +5,7 @@
 
 #define UI_WIDTH 500
 #define UI_HEIGHT 400
-#define UI_SCALE 2
+#define UI_SCALE 1.5f
 
 void ui_init(void);
 void ui_free(void);
