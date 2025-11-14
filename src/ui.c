@@ -19,24 +19,26 @@ typedef struct NoteGrid {
   int high_val;
   int length;
   int notes[MAX_NOTES];
+  const char *label;
 } NoteGrid;
 
 typedef struct UiState {
   SoundParams sound_params;
   Sound sound;
   NoteGrid waveform_array;
-  NoteGrid note_array;
+  NoteGrid note_grid;
   NoteGrid volume_array;
 } UiState;
 
 static UiState state;
 
-NoteGrid note_array_create(Rectangle bounds, int length, int low_val, int init_val, int high_val) {
+NoteGrid note_grid_create(Rectangle bounds, int length, int low_val, int init_val, int high_val, const char *label) {
    NoteGrid self = (NoteGrid) {
     .bounds = bounds,
     .low_val = low_val,
     .high_val = high_val,
-    .length = length
+    .length = length,
+    .label = label
   };
   for (int i = 0; i < length; i++) {
     self.notes[i] = init_val;
@@ -44,7 +46,7 @@ NoteGrid note_array_create(Rectangle bounds, int length, int low_val, int init_v
   return self;
 }
 
-void note_array_draw(NoteGrid *self) {
+void note_grid_draw(NoteGrid *self) {
   float resolution = self->high_val - self->low_val;
   float x_step = self->bounds.width / self->length;
   float y_step = self->bounds.height / resolution;
@@ -54,11 +56,19 @@ void note_array_draw(NoteGrid *self) {
 	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		Vector2 mouse_pos = GetMousePosition();
 		if (CheckCollisionPointRec(mouse_pos, self->bounds)) {
-			int i = (int)((mouse_pos.x - self->bounds.x) / x_step);
-			int val = (int)((y_max - mouse_pos.y) / self->bounds.height * resolution);
-			if (i < self->length) {
-				self->notes[i] = val;
-			}
+			int val = (int)((y_max - mouse_pos.y) / self->bounds.height * resolution + 0.5f);
+
+      if (IsKeyDown(KEY_LEFT_SHIFT)) {
+        for (int i = 0; i < self->length; i++) {
+          self->notes[i] = val;
+        }
+      }
+      else {
+        int i = (int)((mouse_pos.x - self->bounds.x) / x_step);
+        if (i < self->length) {
+          self->notes[i] = val;
+        }
+      }
 		}
 	}
 
@@ -70,13 +80,15 @@ void note_array_draw(NoteGrid *self) {
   }
 
 	DrawRectangleLinesEx(self->bounds, 1, RAYWHITE);
+
+  DrawText(self->label, (int)self->bounds.x - 120, (int)self->bounds.y + 10, 16, WHITE);
 }
 
 static void generate_pressed(void) {
-  state.sound_params.length = state.note_array.length;
-  for (int i = 0; i < state.note_array.length; i++) {
+  state.sound_params.length = state.note_grid.length;
+  for (int i = 0; i < state.note_grid.length; i++) {
     state.sound_params.waveforms[i] = (WaveForm)state.waveform_array.notes[i];
-    state.sound_params.tones[i] = state.note_array.notes[i];
+    state.sound_params.tones[i] = state.note_grid.notes[i];
     state.sound_params.volumes[i] = state.volume_array.notes[i];
   }
 
@@ -90,9 +102,9 @@ void ui_init(void) {
     .sound = {0},
     .sound_params = (SoundParams){.length = 0,
                                   .tones = {0}},
-    .waveform_array = note_array_create((Rectangle){20, 50, 300, 80}, MAX_NOTES, 0, 0, 5),
-    .note_array = note_array_create((Rectangle){20, 140, 300, 350}, MAX_NOTES, 0, 24, 48),
-    .volume_array = note_array_create((Rectangle){20, 500, 300, 80}, MAX_NOTES, 0, 5, 8)};
+    .waveform_array = note_grid_create((Rectangle){140, 50, 300, 80}, MAX_NOTES, 0, 0, NOISE, "Wave"),
+    .note_grid = note_grid_create((Rectangle){140, 140, 300, 350}, MAX_NOTES, 0, 32, 64, "Tone"),
+    .volume_array = note_grid_create((Rectangle){140, 500, 300, 80}, MAX_NOTES, 0, 5, 8, "Volume")};
 }
 
 void ui_free(void) {
@@ -100,9 +112,9 @@ void ui_free(void) {
 }
 
 void ui_process(void) {
-  note_array_draw(&state.waveform_array);
-  note_array_draw(&state.note_array);
-  note_array_draw(&state.volume_array);
+  note_grid_draw(&state.waveform_array);
+  note_grid_draw(&state.note_grid);
+  note_grid_draw(&state.volume_array);
 
   if (GuiButton((Rectangle){20, 10, 160, 24}, "Generate")) {
     generate_pressed();

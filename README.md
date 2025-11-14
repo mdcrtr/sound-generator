@@ -5,7 +5,7 @@ This is a work in progress.
 
 So far it can generate sine, triangle, sawtooth, square and noise waves at different frequencies and volumes.
 
-It has a UI for editing sound parameters. The UI has three bar-chart style controls. The top one controls waveform, The middle one controls tone and the bottom one controls volume.
+It has a UI for editing sound parameters. The UI has three bar-chart style controls. The top one controls waveform, The middle one controls tone and the bottom one controls volume. Shift clicking sets all notes to the same value.
 
 ## Building
 

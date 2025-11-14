@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #define DURATION 0.5f
+#define TONE_OFFSET 36
 
 static const char *waveform_names[] = {"Sine", "Triangle", "Sawtooth", "Square",
                                        "Noise"};
@@ -35,11 +36,15 @@ static float oscillator_step(WaveForm waveform, float index) {
 static void generate_samples(short *buffer, int num_samples,
                              SoundParams params) {
   float wave_idx = 0.0f;
+  float wave_steps[MAX_NOTES];
+  for (int i = 0; i < MAX_NOTES; i++) {
+    int tone = params.tones[i];
+    wave_steps[i] = get_note_frequency(tone - TONE_OFFSET) / SAMPLE_RATE;
+  }
 
   for (int i = 0; i < num_samples; i++) {
     int note_idx = (int)((float)i / (float)num_samples * (float)params.length);
-    int tone = params.tones[note_idx];
-    float wave_step = get_note_frequency(tone - 24) / SAMPLE_RATE;
+    float wave_step = wave_steps[note_idx];
     
     WaveForm waveform = params.waveforms[note_idx];
     float volume = (float)params.volumes[note_idx] / MAX_VOLUME;
